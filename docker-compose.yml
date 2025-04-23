@@ -1,0 +1,117 @@
+version: '3.8'
+
+services:
+  # Базы данных для auth-service
+  auth-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: authuser
+      POSTGRES_PASSWORD: authpass
+      POSTGRES_DB: authdb
+    ports:
+      - "5436:5432"
+    volumes:
+      - auth_postgres_data:/var/lib/postgresql/data
+
+  # База данных для event-service
+  event-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: eventuser
+      POSTGRES_PASSWORD: eventpass
+      POSTGRES_DB: eventdb
+    ports:
+      - "5437:5432"
+    volumes:
+      - event_postgres_data:/var/lib/postgresql/data
+
+  # База данных для user-interaction-service
+  interaction-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: interactionuser
+      POSTGRES_PASSWORD: interactionpass
+      POSTGRES_DB: interactiondb
+    ports:
+      - "5438:5432"
+    volumes:
+      - interaction_postgres_data:/var/lib/postgresql/data
+
+  # База данных для notification-service
+  notification-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: notificationuser
+      POSTGRES_PASSWORD: notificationpass
+      POSTGRES_DB: notificationdb
+    ports:
+      - "5439:5432"
+    volumes:
+      - notification_postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  auth-service:
+    build: ./auth-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - auth-db
+      - redis
+    environment:
+      - DB_HOST=auth-db
+      - DB_USER=authuser
+      - DB_PASSWORD=authpass
+      - DB_NAME=authdb
+      - REDIS_HOST=redis
+
+  event-service:
+    build: ./event-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - event-db
+      - redis
+    environment:
+      - DB_HOST=event-db
+      - DB_USER=eventuser
+      - DB_PASSWORD=eventpass
+      - DB_NAME=eventdb
+      - REDIS_HOST=redis
+
+  user-interaction-service:
+    build: ./user-interaction-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      - interaction-db
+      - redis
+    environment:
+      - DB_HOST=interaction-db
+      - DB_USER=interactionuser
+      - DB_PASSWORD=interactionpass
+      - DB_NAME=interactiondb
+      - REDIS_HOST=redis
+
+  notification-service:
+    build: ./notification-service
+    ports:
+      - "8084:8084"
+    depends_on:
+      - notification-db
+      - redis
+    environment:
+      - DB_HOST=notification-db
+      - DB_USER=notificationuser
+      - DB_PASSWORD=notificationpass
+      - DB_NAME=notificationdb
+      - REDIS_HOST=redis
+
+volumes:
+  auth_postgres_data:
+  event_postgres_data:
+  interaction_postgres_data:
+  notification_postgres_data: 

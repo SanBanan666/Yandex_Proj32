@@ -1,0 +1,50 @@
+image: golang:1.24.2
+
+stages:
+  - test
+  - build
+  - deploy
+
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+
+services:
+  - docker:dind
+
+before_script:
+  - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+
+test:
+  stage: test
+  services:
+    - postgres:15-alpine
+    - redis:7-alpine
+  variables:
+    POSTGRES_DB: testdb
+    POSTGRES_USER: testuser
+    POSTGRES_PASSWORD: testpass
+  script:
+    - cd auth-service && go test -v ./...
+    - cd ../event-service && go test -v ./...
+    - cd ../user-interaction-service && go test -v ./...
+    - cd ../notification-service && go test -v ./...
+
+build:
+  stage: build
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE/auth-service:latest ./auth-service
+    - docker build -t $CI_REGISTRY_IMAGE/event-service:latest ./event-service
+    - docker build -t $CI_REGISTRY_IMAGE/user-interaction-service:latest ./user-interaction-service
+    - docker build -t $CI_REGISTRY_IMAGE/notification-service:latest ./notification-service
+    - docker push $CI_REGISTRY_IMAGE/auth-service:latest
+    - docker push $CI_REGISTRY_IMAGE/event-service:latest
+    - docker push $CI_REGISTRY_IMAGE/user-interaction-service:latest
+    - docker push $CI_REGISTRY_IMAGE/notification-service:latest
+
+deploy:
+  stage: deploy
+  script:
+    - docker-compose up -d
+  only:
+    - main 
