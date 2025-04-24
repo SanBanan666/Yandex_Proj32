@@ -36,7 +36,6 @@ services:
       - "5438:5432"
     volumes:
       - interaction_postgres_data:/var/lib/postgresql/data
-
   # База данных для notification-service
   notification-db:
     image: postgres:15-alpine
